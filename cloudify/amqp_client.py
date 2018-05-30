@@ -313,9 +313,10 @@ class AMQPConnection(object):
             'err_queue': err_queue
         }
         self._publish_queue.put(envelope)
-        err = err_queue.get()
-        if isinstance(err, Exception):
-            raise err
+        if err_queue:
+            err = err_queue.get()
+            if isinstance(err, Exception):
+                raise err
 
 
 class TaskConsumer(object):
