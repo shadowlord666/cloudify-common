@@ -249,9 +249,11 @@ class AMQPConnection(object):
             # to the calling thread - see the publish method
             message = envelope['message']
             err_queue = envelope.get('err_queue')
+            message.setdefault('mandatory', True)
+            message.setdefault('immediate', True)
 
             try:
-                channel.basic_publish(**message)
+                channel.publish(**message)
             except pika.exceptions.ConnectionClosed:
                 if self._closed:
                     return
