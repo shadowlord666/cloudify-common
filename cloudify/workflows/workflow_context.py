@@ -21,6 +21,7 @@ import threading
 import Queue
 import time
 import logging
+import pika
 
 from proxy_tools import proxy
 
@@ -1205,8 +1206,11 @@ class _TaskDispatcher(object):
 
         callback = functools.partial(self._received, task['id'], client)
         self._logger.debug('Sending task [{0}] - {1}'.format(task['id'], task))
-        handler.publish(task, callback=callback, routing_key='operation',
-                        correlation_id=task['id'])
+        try:
+            handler.publish(task, callback=callback, routing_key='operation',
+                            correlation_id=task['id'])
+        except pika.exceptions.ChannelClosed:
+            raise exceptions.RecoverableError('ChannelClosed')
         self._logger.debug('Task [{0}] sent'.format(task['id']))
 
         self._tasks.setdefault(client, {})[task['id']] = \
