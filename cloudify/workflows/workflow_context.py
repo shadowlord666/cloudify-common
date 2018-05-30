@@ -1206,6 +1206,8 @@ class _TaskDispatcher(object):
 
         callback = functools.partial(self._received, task['id'], client)
         self._logger.debug('Sending task [{0}] - {1}'.format(task['id'], task))
+        if task['target'] == 'cloudify_agent':
+            from celery.contrib import rdb; rdb.set_trace()
         try:
             handler.publish(task, callback=callback, routing_key='operation',
                             correlation_id=task['id'])
