@@ -406,6 +406,7 @@ class SendHandler(object):
         self._connection = connection
 
         out_channel = connection.channel()
+        out_channel.confirm_delivery()
         out_channel.exchange_declare(exchange=self.exchange,
                                      exchange_type=self.exchange_type,
                                      **self.exchange_settings)
