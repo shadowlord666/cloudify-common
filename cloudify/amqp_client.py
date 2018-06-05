@@ -21,6 +21,7 @@ import uuid
 import Queue
 import logging
 import threading
+from functools import partial
 from urlparse import urlsplit, urlunsplit
 
 import pika
@@ -202,11 +203,10 @@ class AMQPConnection(object):
             return connection
 
     def consume(self):
-        out_channel = self.connect()
+        self.out_channel = self.connect()
         while not self._closed:
             try:
-                self._pika_connection.process_data_events(0.2)
-                self._process_publish(out_channel)
+                self._pika_connection.process_data_events()
             except pika.exceptions.ChannelClosed as e:
                 # happens when we attempt to use an exchange/queue that is not
                 # declared - nothing we can do to help it, just exit
@@ -214,9 +214,8 @@ class AMQPConnection(object):
                 break
             except pika.exceptions.ConnectionClosed:
                 self.connect_wait.clear()
-                out_channel = self.connect()
+                self.out_channel = self.connect()
                 continue
-        self._process_publish(out_channel)
         self._pika_connection.close()
 
     def consume_in_thread(self):
@@ -239,34 +238,18 @@ class AMQPConnection(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def _process_publish(self, channel):
-        while True:
-            try:
-                envelope = self._publish_queue.get_nowait()
-            except Queue.Empty:
-                return
-
-            # we use a separate queue to send any possible exceptions back
-            # to the calling thread - see the publish method
-            message = envelope['message']
-            err_queue = envelope.get('err_queue')
-
-            try:
-                channel.publish(**message)
-            except pika.exceptions.ConnectionClosed:
-                if self._closed:
-                    return
-                # if we couldn't send the message because the connection
-                # was down, requeue it to be sent again later
-                self._publish_queue.put(envelope)
-                raise
-            except Exception as e:
-                if err_queue:
-                    err_queue.put(e)
-                raise
-            else:
-                if err_queue:
-                    err_queue.put(None)
+    def _process_publish(self, message, err_queue=None):
+        # we use a separate queue to send any possible exceptions back
+        # to the calling thread - see the publish method
+        try:
+            self.output_channel.publish(**message)
+        except Exception as e:
+            if err_queue:
+                err_queue.put(e)
+            raise
+        else:
+            if err_queue:
+                err_queue.put(None)
 
     def close(self, wait=True):
         self._closed = True
@@ -309,11 +292,8 @@ class AMQPConnection(object):
         # back out, so we pass a Queue together with the message, that will
         # contain either an exception instance, or None
         err_queue = Queue.Queue() if wait else None
-        envelope = {
-            'message': message,
-            'err_queue': err_queue
-        }
-        self._publish_queue.put(envelope)
+        self._pika_connection.add_timeout(
+            0, partial(self._process_publish, message, err_queue))
         if err_queue:
             err = err_queue.get(timeout=timeout)
             if isinstance(err, Exception):
