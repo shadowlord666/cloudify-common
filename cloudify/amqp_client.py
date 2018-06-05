@@ -187,8 +187,8 @@ class AMQPConnection(object):
             logger.info('Registered handler for {0} [{1}]'
                         .format(handler.__class__.__name__,
                                 handler.routing_key))
+        self.out_channel = out_channel
         self.connect_wait.set()
-        return out_channel
 
     def _get_pika_connection(self, params, deadline=None):
         try:
@@ -203,7 +203,7 @@ class AMQPConnection(object):
             return connection
 
     def consume(self):
-        self.out_channel = self.connect()
+        self.connect()
         while not self._closed:
             try:
                 self._pika_connection.process_data_events()
@@ -214,7 +214,7 @@ class AMQPConnection(object):
                 break
             except pika.exceptions.ConnectionClosed:
                 self.connect_wait.clear()
-                self.out_channel = self.connect()
+                self.connect()
                 continue
         self._pika_connection.close()
 
@@ -242,7 +242,7 @@ class AMQPConnection(object):
         # we use a separate queue to send any possible exceptions back
         # to the calling thread - see the publish method
         try:
-            self.output_channel.publish(**message)
+            self.out_channel.publish(**message)
         except Exception as e:
             if err_queue:
                 err_queue.put(e)
