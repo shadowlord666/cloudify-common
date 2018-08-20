@@ -544,7 +544,7 @@ class _WorkflowContextBase(object):
 
     def store_operation(self, operation_id, name):
         if not self.local:
-            client = get_rest_client()
+            client = get_rest_client(tenant=self.tenant_name)
             client.operations.create(operation_id, name=name,
                                      execution_id=self.execution_id)
 
