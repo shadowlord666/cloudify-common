@@ -188,6 +188,9 @@ class TaskDependencyGraph(object):
     def _handle_executable_task(self, task):
         """Handle executable task"""
         task.set_state(tasks.TASK_SENDING)
+        task_ctx = task.cloudify_context
+        self.ctx.store_operation(task_ctx['task_id'],
+                                 name=task_ctx['operation']['name'])
         task.apply_async()
 
     def _handle_terminated_task(self, task):
