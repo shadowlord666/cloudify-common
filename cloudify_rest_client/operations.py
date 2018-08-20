@@ -42,7 +42,7 @@ class OperationsClient(object):
             'execution_id': execution_id
         }
         uri = '/operations/{0}'.format(operation_id)
-        response = self.api.put(uri, data=params)
+        response = self.api.put(uri, data=params, expected_status_code=201)
         return Operation(response)
 
     def update(self, operation_id, state):
