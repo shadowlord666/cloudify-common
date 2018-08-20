@@ -542,10 +542,10 @@ class _WorkflowContextBase(object):
             local_task=send_event_task,
             info=event)
 
-    def store_operation(self, operation_id, operation_name):
+    def store_operation(self, operation_id, name):
         if not self.local:
             client = get_rest_client()
-            client.operations.create(operation_id, name=operation_name,
+            client.operations.create(operation_id, name=name,
                                      execution_id=self.execution_id)
 
     def _execute_operation(self,
