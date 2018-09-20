@@ -24,7 +24,8 @@ from dsl_parser.elements import (imports,
                                  workflows,
                                  policies,
                                  data_types,
-                                 version as _version)
+                                 version as _version,
+                                 service)
 from dsl_parser.framework.elements import Element
 from dsl_parser.framework.requirements import Value
 
@@ -83,7 +84,8 @@ class Blueprint(Element):
         'policies': policies.Policies,
         'workflows': workflows.Workflows,
         'outputs': misc.Outputs,
-        'data_types': data_types.DataTypes
+        'data_types': data_types.DataTypes,
+        'substitution_mapping': service.SubstitutionMapping
     }
 
     requires = {
@@ -115,5 +117,7 @@ class Blueprint(Element):
                 deployment_plugins_to_install,
             constants.WORKFLOW_PLUGINS_TO_INSTALL: workflow_plugins_to_install,
             constants.VERSION: self.child(
-                _version.ToscaDefinitionsVersion).value
+                _version.ToscaDefinitionsVersion).value,
+            constants.SUBSTITUTION_MAPPING: self.child(
+                service.SubstitutionMapping).value
         })

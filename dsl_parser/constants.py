@@ -61,6 +61,7 @@ PLUGINS_TO_INSTALL = 'plugins_to_install'
 DEPLOYMENT_PLUGINS_TO_INSTALL = 'deployment_plugins_to_install'
 WORKFLOW_PLUGINS_TO_INSTALL = 'workflow_plugins_to_install'
 VERSION = 'version'
+SUBSTITUTION_MAPPING = 'substitution_mapping'
 CLOUDIFY = 'cloudify'
 
 SCRIPT_PLUGIN_NAME = 'script'
