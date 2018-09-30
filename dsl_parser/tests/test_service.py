@@ -18,7 +18,7 @@ from dsl_parser import (constants,
 from dsl_parser.tests.abstract_test_parser import AbstractTestParser
 
 
-class TestSubstitutionMapping(AbstractTestParser):
+class TestSubstitutionMappingBlueprint(AbstractTestParser):
     BASE_BLUEPRINT = """
 node_types:
     cloudify.nodes.Compute:
@@ -61,3 +61,17 @@ substitution_mapping:
 """
         self.assertRaises(exceptions.DSLParsingLogicException,
                           self.parse, yaml)
+
+
+class TestSubstitutionMappingUse(AbstractTestParser):
+    def test_success_local_mapping_import(self):
+        pass
+
+    def test_get_attribute_from_mapping(self):
+        pass
+
+    def test_failure_with_no_required_node_type(self):
+        pass
+
+    def test_success_with_nothing_to_map_with_substitution_mapping(self):
+        pass

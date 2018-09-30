@@ -63,7 +63,6 @@ class Imports(Element):
 
 
 class ImportLoader(Element):
-
     schema = Leaf(type=str)
 
 
@@ -133,6 +132,7 @@ def _dsl_location_to_url(dsl_location, resources_base_path):
     return dsl_location
 
 
+# needs a new name, it does not get the location only complete local resources
 def _get_resource_location(resource_name,
                            resources_base_path,
                            current_resource_context=None):
@@ -158,6 +158,19 @@ def _get_resource_location(resource_name,
     return None
 
 
+def _node_type_substitution(combined_parsed_dsl_holder,
+                            parsed_blueprint,
+                            mapped_type):
+    for section_key, section_value in combined_parsed_dsl_holder.value. \
+            iteritems():
+        if section_key.value == constants.NODE_TEMPLATES:
+            for key_holder, value_holder in section_value.value.\
+                    iteritems():
+                _, node_type_holder = value_holder.get_item('type')
+                if node_type_holder.value == mapped_type:
+                    pass
+
+
 def _combine_imports(parsed_dsl_holder, dsl_location,
                      resources_base_path, version, resolver,
                      validate_version):
@@ -175,8 +188,16 @@ def _combine_imports(parsed_dsl_holder, dsl_location,
         if validate_version:
             _validate_version(version.raw, import_url,
                               parsed_imported_dsl_holder)
-        _merge_parsed_into_combined(
-            holder_result, parsed_imported_dsl_holder, version)
+        mapping_holder, mapping_value = parsed_imported_dsl_holder.get_item(
+            constants.SUBSTITUTION_MAPPING)
+        if not mapping_holder or import_url == 'root':
+            _merge_parsed_into_combined(
+                holder_result, parsed_imported_dsl_holder, version)
+        else:
+            holder, value = mapping_value.get_item('node_type')
+            _node_type_substitution(holder_result,
+                                    parsed_imported_dsl_holder,
+                                    value.value)
     holder_result.value[version_key_holder] = version_value_holder
     return holder_result
 
