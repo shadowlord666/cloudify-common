@@ -22,7 +22,7 @@ from dsl_parser.import_resolver.abstract_import_resolver import \
     AbstractImportResolver
 from dsl_parser.import_resolver.default_import_resolver import \
     DefaultResolverValidationException, DefaultImportResolver, \
-    DEFAULT_RESLOVER_RULES_KEY
+    DEFAULT_RESOLVER_RULES_KEY
 
 default_resolver_class_path = "%s:%s" % (
     DefaultImportResolver.__module__, DefaultImportResolver.__name__)
@@ -90,11 +90,11 @@ class CreateImportResolverTests(testtools.TestCase):
     def test_no_configuration_specified(self):
         self._test_create_import_resolver(
             expected_resolver=DefaultImportResolver(),
-            expected_params_name=DEFAULT_RESLOVER_RULES_KEY)
+            expected_params_name=DEFAULT_RESOLVER_RULES_KEY)
 
     def test_specified_default_class_path_and_params(self):
         parameters = {
-            DEFAULT_RESLOVER_RULES_KEY: [{'rules1key': 'rules1value'}]
+            DEFAULT_RESOLVER_RULES_KEY: [{'rules1key': 'rules1value'}]
         }
         resolver_configuration = {
             RESOLVER_IMPLEMENTATION_KEY: default_resolver_class_path,
@@ -103,7 +103,7 @@ class CreateImportResolverTests(testtools.TestCase):
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
             expected_resolver=DefaultImportResolver(**parameters),
-            expected_params_name=DEFAULT_RESLOVER_RULES_KEY)
+            expected_params_name=DEFAULT_RESOLVER_RULES_KEY)
 
     def test_specified_default_class_path_no_params(self):
         resolver_configuration = {
@@ -112,11 +112,11 @@ class CreateImportResolverTests(testtools.TestCase):
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
             expected_resolver=DefaultImportResolver(),
-            expected_params_name=DEFAULT_RESLOVER_RULES_KEY)
+            expected_params_name=DEFAULT_RESOLVER_RULES_KEY)
 
     def test_specified_params_no_class_path(self):
         parameters = {
-            DEFAULT_RESLOVER_RULES_KEY: [{'rules1key': 'rules1value'}]
+            DEFAULT_RESOLVER_RULES_KEY: [{'rules1key': 'rules1value'}]
         }
         resolver_configuration = {
             RESLOVER_PARAMETERS_KEY: parameters
@@ -124,7 +124,7 @@ class CreateImportResolverTests(testtools.TestCase):
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
             expected_resolver=DefaultImportResolver(**parameters),
-            expected_params_name=DEFAULT_RESLOVER_RULES_KEY)
+            expected_params_name=DEFAULT_RESOLVER_RULES_KEY)
 
     def test_create_custom_resolver(self):
         parameters = {
@@ -155,7 +155,7 @@ class CreateImportResolverTests(testtools.TestCase):
             raise DefaultResolverValidationException('mock exception')
 
         resolver_configuration = {
-            DEFAULT_RESLOVER_RULES_KEY: ''
+            DEFAULT_RESOLVER_RULES_KEY: ''
         }
         original_init = DefaultImportResolver.__init__
         DefaultImportResolver.__init__ = mock_default_resolver_init

@@ -18,7 +18,7 @@ from dsl_parser.import_resolver.abstract_import_resolver \
     import AbstractImportResolver, read_import
 
 DEFAULT_RULES = []
-DEFAULT_RESLOVER_RULES_KEY = 'rules'
+DEFAULT_RESOLVER_RULES_KEY = 'rules'
 
 
 class DefaultResolverValidationException(Exception):
@@ -126,7 +126,7 @@ class DefaultImportResolver(AbstractImportResolver):
                 'Invalid parameters supplied for the default resolver: '
                 'The `{0}` parameter must be a list but it is of type {1}.'
                 .format(
-                    DEFAULT_RESLOVER_RULES_KEY,
+                    DEFAULT_RESOLVER_RULES_KEY,
                     type(self.rules).__name__))
         for rule in self.rules:
             if not isinstance(rule, dict):
