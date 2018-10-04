@@ -132,6 +132,11 @@ def _dsl_location_to_url(dsl_location, resources_base_path):
     return dsl_location
 
 
+def _is_remote_resource_import(resource_url):
+    url_parts = resource_url.split(':')
+    return url_parts[0] in ['plugin', 'blueprint']
+
+
 # needs a new name, it does not get the location only complete local resources
 def _get_resource_location(resource_name,
                            resources_base_path,
@@ -160,15 +165,19 @@ def _get_resource_location(resource_name,
 
 def _node_type_substitution(combined_parsed_dsl_holder,
                             parsed_blueprint,
-                            mapped_type):
-    for section_key, section_value in combined_parsed_dsl_holder.value. \
-            iteritems():
+                            mapped_type,
+                            version):
+    for section_key, section_value in list(combined_parsed_dsl_holder.value.
+                                           items()):
         if section_key.value == constants.NODE_TEMPLATES:
             for key_holder, value_holder in section_value.value.\
                     iteritems():
                 _, node_type_holder = value_holder.get_item('type')
                 if node_type_holder.value == mapped_type:
-                    pass
+                    del combined_parsed_dsl_holder.value[section_key]
+                    _merge_parsed_into_combined(combined_parsed_dsl_holder,
+                                                parsed_blueprint,
+                                                version)
 
 
 def _combine_imports(parsed_dsl_holder, dsl_location,
@@ -190,14 +199,15 @@ def _combine_imports(parsed_dsl_holder, dsl_location,
                               parsed_imported_dsl_holder)
         mapping_holder, mapping_value = parsed_imported_dsl_holder.get_item(
             constants.SUBSTITUTION_MAPPING)
-        if not mapping_holder or import_url == 'root':
+        if not mapping_holder or holder_result.value == {}:
             _merge_parsed_into_combined(
                 holder_result, parsed_imported_dsl_holder, version)
         else:
             holder, value = mapping_value.get_item('node_type')
             _node_type_substitution(holder_result,
                                     parsed_imported_dsl_holder,
-                                    value.value)
+                                    value.value,
+                                    version)
     holder_result.value[version_key_holder] = version_value_holder
     return holder_result
 
@@ -235,11 +245,15 @@ def _build_ordered_imports(parsed_dsl_holder,
                                                    location(_current_import))
             else:
                 raw_imported_dsl = resolver.fetch_import(import_url)
-                imported_dsl_holder = utils.load_yaml(
-                    raw_yaml=raw_imported_dsl,
-                    error_message="Failed to parse import '{0}' (via '{1}')"
-                                  .format(another_import, import_url),
-                    filename=another_import)
+                if _is_remote_resource_import(import_url):
+                    imported_dsl_holder = raw_imported_dsl
+                else:
+                    imported_dsl_holder = utils.load_yaml(
+                        raw_yaml=raw_imported_dsl,
+                        error_message="Failed to parse import '{0}' (via '{1}')"
+                            .format(another_import, import_url),
+                        filename=another_import)
+
                 imports_graph.add(import_url, imported_dsl_holder,
                                   location(_current_import))
                 _build_ordered_imports_recursive(imported_dsl_holder,

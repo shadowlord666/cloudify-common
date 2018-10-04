@@ -25,7 +25,8 @@ def parse_from_path(dsl_file_path,
                     resources_base_path=None,
                     resolver=None,
                     validate_version=True,
-                    additional_resource_sources=()):
+                    additional_resource_sources=(),
+                    return_resolved_blueprint=False):
     with open(dsl_file_path, 'r') as f:
         dsl_string = f.read()
     return _parse(dsl_string,
@@ -33,19 +34,22 @@ def parse_from_path(dsl_file_path,
                   dsl_location=dsl_file_path,
                   resolver=resolver,
                   validate_version=validate_version,
-                  additional_resource_sources=additional_resource_sources)
+                  additional_resource_sources=additional_resource_sources,
+                  return_resolved_blueprint=return_resolved_blueprint)
 
 
 def parse(dsl_string,
           resources_base_path=None,
           dsl_location=None,
           resolver=None,
-          validate_version=True):
+          validate_version=True,
+          return_resolved_blueprint=False):
     return _parse(dsl_string,
                   resources_base_path=resources_base_path,
                   dsl_location=dsl_location,
                   resolver=resolver,
-                  validate_version=validate_version)
+                  validate_version=validate_version,
+                  return_resolved_blueprint=return_resolved_blueprint)
 
 
 def _parse(dsl_string,
@@ -53,7 +57,8 @@ def _parse(dsl_string,
            dsl_location=None,
            resolver=None,
            validate_version=True,
-           additional_resource_sources=()):
+           additional_resource_sources=(),
+           return_resolved_blueprint=False):
     parsed_dsl_holder = utils.load_yaml(raw_yaml=dsl_string,
                                         error_message='Failed to parse DSL',
                                         filename=dsl_location)
@@ -89,6 +94,9 @@ def _parse(dsl_string,
         resource_base.extend(additional_resource_sources)
 
     merged_blueprint_holder = result['merged_blueprint']
+
+    if return_resolved_blueprint:
+        return merged_blueprint_holder
 
     # parse blueprint
     plan = parser.parse(
