@@ -89,6 +89,14 @@ class Holder(object):
             result = obj
         return Holder(result, filename=filename)
 
+    def copy_and_rename(self, prefix):
+        return Holder(value=prefix + self.value,
+                      start_line=self.start_line,
+                      start_column=self.start_column,
+                      end_line=self.end_line,
+                      end_column=self.end_column,
+                      filename=self.filename)
+
     def copy(self):
         return Holder(value=self.value,
                       start_line=self.start_line,

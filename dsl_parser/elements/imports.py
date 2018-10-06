@@ -177,7 +177,9 @@ def _node_type_substitution(combined_parsed_dsl_holder,
                     del combined_parsed_dsl_holder.value[section_key]
                     _merge_parsed_into_combined(combined_parsed_dsl_holder,
                                                 parsed_blueprint,
-                                                version)
+                                                version,
+                                                key_holder.value + "::",
+                                                [constants.SUBSTITUTION_MAPPING])
 
 
 def _combine_imports(parsed_dsl_holder, dsl_location,
@@ -279,17 +281,27 @@ def _validate_version(dsl_version,
                         version_value_holder.value))
 
 
+def _add_namespace_prefix_to_all_keys(holder, prefix):
+    for key, _ in holder.value.iteritems():
+        key.value = prefix + key.value
+    return holder
+
+
 def _merge_parsed_into_combined(combined_parsed_dsl_holder,
                                 parsed_imported_dsl_holder,
-                                version):
+                                version,
+                                namespace='',
+                                extended_ignore_group=[]):
     merge_no_override = MERGE_NO_OVERRIDE.copy()
     if version['definitions_version'] > (1, 2):
         merge_no_override.update(MERGEABLE_FROM_DSL_VERSION_1_3)
     for key_holder, value_holder in parsed_imported_dsl_holder.value.\
             iteritems():
-        if key_holder.value in IGNORE:
+        if key_holder.value in IGNORE.union(extended_ignore_group):
             pass
         elif key_holder.value not in combined_parsed_dsl_holder:
+            if namespace:
+                value_holder = _add_namespace_prefix_to_all_keys(value_holder, namespace)
             combined_parsed_dsl_holder.value[key_holder] = value_holder
         elif key_holder.value in merge_no_override:
             _, to_dict = combined_parsed_dsl_holder.get_item(key_holder.value)
@@ -308,11 +320,16 @@ def _merge_parsed_into_combined(combined_parsed_dsl_holder,
                 3, msg.format(key_holder.value))
 
 
-def _merge_into_dict_or_throw_on_duplicate(from_dict_holder, to_dict_holder,
-                                           key_name):
+def _merge_into_dict_or_throw_on_duplicate(from_dict_holder,
+                                           to_dict_holder,
+                                           key_name,
+                                           namespace=''):
     for key_holder, value_holder in from_dict_holder.value.iteritems():
         if key_holder.value not in to_dict_holder:
-            to_dict_holder.value[key_holder] = value_holder
+            current_key_holder = key_holder
+            if namespace:
+                current_key_holder = key_holder.copy_and_rename(namespace)
+            to_dict_holder.value[current_key_holder] = value_holder
         else:
             raise exceptions.DSLParsingLogicException(
                 4, "Import failed: Could not merge '{0}' due to conflict "
