@@ -74,8 +74,8 @@ class TasksGraphClient(object):
         self._uri_prefix = 'tasks_graphs'
         self._wrapper_cls = TasksGraph
 
-    def list(self, execution_id):
-        params = {'execution_id': execution_id}
+    def list(self, execution_id, name):
+        params = {'execution_id': execution_id, 'name': name}
         response = self.api.get('/{self._uri_prefix}'.format(self=self),
                                 params=params)
         return ListResponse(

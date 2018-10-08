@@ -17,7 +17,7 @@ from cloudify import constants, utils
 from cloudify.decorators import workflow
 from cloudify.plugins import lifecycle
 from cloudify.manager import get_rest_client
-
+from cloudify.workflows.tasks_graph import TaskDependencyGraph
 
 @workflow
 def install(ctx, **kwargs):
@@ -324,12 +324,12 @@ def restart(ctx, stop_parms, start_parms, run_by_dependency_order, type_names,
           node_ids, node_instance_ids, **kwargs)
 
 
-@workflow
-def execute_operation(ctx, operation, operation_kwargs, allow_kwargs_override,
-                      run_by_dependency_order, type_names, node_ids,
-                      node_instance_ids, **kwargs):
-    """ A generic workflow for executing arbitrary operations on nodes """
 
+@workflow
+def _make_execute_operation_graph(ctx, operation, operation_kwargs,
+                                  allow_kwargs_override,
+                                  run_by_dependency_order, type_names,
+                                  node_ids, node_instance_ids, **kwargs):
     graph = ctx.graph_mode()
     subgraphs = {}
 
@@ -389,6 +389,24 @@ def execute_operation(ctx, operation, operation_kwargs, allow_kwargs_override,
                 graph.add_dependency(subgraphs[instance.id],
                                      subgraphs[rel.target_id])
 
+
+@workflow
+def execute_operation(ctx, operation, operation_kwargs, allow_kwargs_override,
+                      run_by_dependency_order, type_names, node_ids,
+                      node_instance_ids, **kwargs):
+    """ A generic workflow for executing arbitrary operations on nodes """
+
+    client = get_rest_client()
+    graph = client.tasks_graphs.get(execution_id=ctx.execution.id,
+                                    name='execute_operation')
+    if not graph:
+        graph = _make_execute_operation_graph(
+            ctx, operation, operation_kwargs, allow_kwargs_override,
+            run_by_dependency_order, type_names, node_ids, node_instance_ids,
+            **kwargs)
+        graph.store(client, name='execute_operation')
+    else:
+        graph = TaskDependencyGraph.restore(client, graph)
     graph.execute()
 
 

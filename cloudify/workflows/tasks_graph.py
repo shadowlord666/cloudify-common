@@ -15,6 +15,7 @@
 
 
 import time
+import uuid
 
 import networkx as nx
 
@@ -29,12 +30,22 @@ class TaskDependencyGraph(object):
     :param workflow_context: A WorkflowContext instance (used for logging)
     """
 
+    @classmethod
+    def restore(cls, client, graph):
+        return cls()
+
     def __init__(self, workflow_context,
                  default_subgraph_task_config=None):
         self.ctx = workflow_context
         self.graph = nx.DiGraph()
         default_subgraph_task_config = default_subgraph_task_config or {}
         self._default_subgraph_task_config = default_subgraph_task_config
+
+    def store(self, ctx, client, name):
+        graph_id = uuid.uuid4().hex
+        client.task_graphs.create(graph_id, name, ctx.execution.id)
+        for task in self.tasks_iter():
+            client.operations.create(task.id, task.name, ctx.execution.id)
 
     def add_task(self, task):
         """Add a WorkflowTask to this graph
