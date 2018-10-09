@@ -403,7 +403,7 @@ def execute_operation(ctx, operation, operation_kwargs, allow_kwargs_override,
     """ A generic workflow for executing arbitrary operations on nodes """
 
     client = get_rest_client()
-    graph = get_tasks_graph(client, ctx.execution.id, name='execute_operation')
+    graph = get_tasks_graph(client, ctx.execution_id, name='execute_operation')
     if not graph:
         graph = _make_execute_operation_graph(
             ctx, operation, operation_kwargs, allow_kwargs_override,
