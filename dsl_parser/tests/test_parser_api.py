@@ -3198,3 +3198,26 @@ node_templates:
         plugin2 = node2['plugins_to_install'][0]
         self.assertEqual(expected_plugin1, plugin1)
         self.assertEqual(expected_plugin2, plugin2)
+
+
+class TestNamespaceImport(AbstractTestParser):
+
+    def test_namespace_import(self):
+        yaml = self.BASIC_VERSION_SECTION_DSL_1_3 + """
+node_types:
+  test_type:
+    properties:
+      prop1:
+        default: value"""
+        bottom_file_name = self.make_yaml_file(yaml)
+
+        top_level_yaml = self.BASIC_VERSION_SECTION_DSL_1_3 + """
+node_templates:
+    test_node:
+        type: test_type
+        """ + """
+imports:
+    -   {0}
+        namespace_prefix: {1}""".format(bottom_file_name, "namespace")
+
+        result = self.parse(top_level_yaml)

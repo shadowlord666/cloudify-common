@@ -24,7 +24,8 @@ from dsl_parser import (exceptions,
                         utils)
 from dsl_parser.framework.elements import (Element,
                                            Leaf,
-                                           List)
+                                           List,
+                                           Dict)
 
 
 MERGE_NO_OVERRIDE = set([
@@ -54,7 +55,7 @@ IGNORE = set([
 
 class Import(Element):
 
-    schema = Leaf(type=str)
+    schema = Leaf(type=[str, Dict])
 
 
 class Imports(Element):
