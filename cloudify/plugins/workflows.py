@@ -19,6 +19,7 @@ from cloudify.plugins import lifecycle
 from cloudify.manager import get_rest_client
 from cloudify.workflows.tasks_graph import TaskDependencyGraph
 
+
 @workflow
 def install(ctx, **kwargs):
     """Default install workflow"""
@@ -324,7 +325,6 @@ def restart(ctx, stop_parms, start_parms, run_by_dependency_order, type_names,
           node_ids, node_instance_ids, **kwargs)
 
 
-
 @workflow
 def _make_execute_operation_graph(ctx, operation, operation_kwargs,
                                   allow_kwargs_override,
@@ -390,6 +390,12 @@ def _make_execute_operation_graph(ctx, operation, operation_kwargs,
                                      subgraphs[rel.target_id])
 
 
+def get_tasks_graph(client, execution_id, name):
+    graphs = client.tasks_graphs.list(execution_id=execution_id, name=name)
+    if graphs:
+        return graphs[0]
+
+
 @workflow
 def execute_operation(ctx, operation, operation_kwargs, allow_kwargs_override,
                       run_by_dependency_order, type_names, node_ids,
@@ -397,8 +403,7 @@ def execute_operation(ctx, operation, operation_kwargs, allow_kwargs_override,
     """ A generic workflow for executing arbitrary operations on nodes """
 
     client = get_rest_client()
-    graph = client.tasks_graphs.get(execution_id=ctx.execution.id,
-                                    name='execute_operation')
+    graph = get_tasks_graph(client, ctx.execution.id, name='execute_operation')
     if not graph:
         graph = _make_execute_operation_graph(
             ctx, operation, operation_kwargs, allow_kwargs_override,
