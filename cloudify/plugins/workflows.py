@@ -388,6 +388,7 @@ def _make_execute_operation_graph(ctx, operation, operation_kwargs,
             for rel in instance.relationships:
                 graph.add_dependency(subgraphs[instance.id],
                                      subgraphs[rel.target_id])
+    return graph
 
 
 def get_tasks_graph(client, execution_id, name):
