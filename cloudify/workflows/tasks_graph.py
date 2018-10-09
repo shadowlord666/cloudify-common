@@ -200,7 +200,7 @@ class TaskDependencyGraph(object):
         """Handle executable task"""
         task.set_state(tasks.TASK_SENDING)
         task_ctx = task.cloudify_context
-        if task_ctx:
+        if task_ctx and 'operation' in task_ctx:
             self.ctx.store_operation(task_ctx['task_id'],
                                      name=task_ctx['operation']['name'])
         task.apply_async()
