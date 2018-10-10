@@ -36,7 +36,7 @@ class TaskDependencyGraph(object):
         operations = client.operations.list(workflow_context.execution_id)
         tasks = {}
         for op_descr in operations:
-            op = OP_TYPES[op_descr.type].restore(workflow_context,
+            op = OP_TYPES[op_descr.type].restore(workflow_context, graph,
                                                  op_descr.parameters)
             graph.add_task(op)
             tasks[op_descr.id] = op
@@ -322,6 +322,12 @@ class SubgraphTask(tasks.WorkflowTask):
         if not self.on_failure:
             self.on_failure = lambda tsk: tasks.HandlerResult.fail()
         self.async_result = tasks.StubAsyncResult()
+
+    @classmethod
+    def restore(cls, ctx, graph, params):
+        params['task_kwargs']['graph'] = graph
+        task = super(SubgraphTask, cls).restore(ctx, graph, params)
+        return task
 
     def _duplicate(self):
         raise NotImplementedError('self.retried_task should be set explicitly'

@@ -109,9 +109,9 @@ class WorkflowTask(object):
 
     @classmethod
     def restore(cls, ctx, params):
-        task = cls(workflow_context=ctx, task_id=params['id'])
+        task = cls(workflow_context=ctx, task_id=params['id'],
+                   info=params['info'], **params.get('task_kwargs', {}))
         task._state = params['state']
-        task.info = params['info']
         task.current_retries = params['current_retries']
         return task
 
@@ -367,6 +367,14 @@ class RemoteWorkflowTask(WorkflowTask):
         self._cloudify_context = cloudify_context
         self._cloudify_agent = None
 
+    def dump(self):
+        task = super(RemoteWorkflowTask, self).dump()
+        task['task_kwargs'] = {
+            'cloudify_context': self.cloudify_context,
+            'kwargs': self._kwargs
+        }
+        return task
+
     def apply_async(self):
         """
         Call the underlying tasks' apply_async. Verify the worker
@@ -583,7 +591,17 @@ class LocalWorkflowTask(WorkflowTask):
         super_dump.update({
             'name': self._name
         })
+        super_dump['task_kwargs'] = {
+            'name': self._name,
+            'local_task': None
+        }
         return super_dump
+
+    @classmethod
+    def restore(cls, ctx, params):
+        task = super(LocalWorkflowTask, cls).restore(ctx, params)
+        task.local_task = lambda *a, **kw: None
+        return task
 
     def apply_async(self):
         """
@@ -645,7 +663,7 @@ class LocalWorkflowTask(WorkflowTask):
 # NOP tasks class
 class NOPLocalWorkflowTask(LocalWorkflowTask):
 
-    def __init__(self, workflow_context):
+    def __init__(self, workflow_context, **kwargs):
         super(NOPLocalWorkflowTask, self).__init__(lambda: None,
                                                    workflow_context)
 
