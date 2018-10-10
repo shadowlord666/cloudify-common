@@ -43,6 +43,7 @@ class TaskDependencyGraph(object):
         for op_descr in operations:
             op = tasks[op_descr.id]
             for target in op_descr.dependencies:
+                target = tasks[target]
                 graph.add_dependency(op, target)
         return graph
 
