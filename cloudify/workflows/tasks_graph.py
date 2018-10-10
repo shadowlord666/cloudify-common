@@ -37,7 +37,7 @@ class TaskDependencyGraph(object):
         tasks = {}
         for op_descr in operations:
             op = OP_TYPES[op_descr.type].restore(workflow_context,
-                                                 op_descr.params)
+                                                 op_descr.parameters)
             graph.add_task(op)
             tasks[op_descr.id] = op
         for op_descr in operations:
