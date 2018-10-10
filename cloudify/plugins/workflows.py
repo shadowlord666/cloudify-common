@@ -412,7 +412,7 @@ def execute_operation(ctx, operation, operation_kwargs, allow_kwargs_override,
             **kwargs)
         graph.store(ctx, client, name='execute_operation')
     else:
-        graph = TaskDependencyGraph.restore(client, graph)
+        graph = TaskDependencyGraph.restore(ctx, client, graph)
     graph.execute()
 
 

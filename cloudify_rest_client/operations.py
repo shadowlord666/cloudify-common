@@ -21,6 +21,18 @@ class Operation(dict):
     def created_at(self):
         return self.get('created_at')
 
+    @property
+    def dependencies(self):
+        return self.get('dependencies')
+
+    @property
+    def type(self):
+        return self.get('type')
+
+    @property
+    def parameters(self):
+        return self.get('parameters')
+
 
 class OperationsClient(object):
     def __init__(self, api):
@@ -36,14 +48,17 @@ class OperationsClient(object):
             [self._wrapper_cls(item) for item in response['items']],
             response['metadata'])
 
-    def create(self, operation_id, name, execution_id, dependencies):
-        params = {
+    def create(self, operation_id, name, execution_id, type, parameters,
+               dependencies):
+        data = {
             'name': name,
             'execution_id': execution_id,
-            'dependencies': dependencies
+            'dependencies': dependencies,
+            'type': type,
+            'parameters': parameters
         }
         uri = '/operations/{0}'.format(operation_id)
-        response = self.api.put(uri, data=params, expected_status_code=201)
+        response = self.api.put(uri, data=data, expected_status_code=201)
         return Operation(response)
 
     def update(self, operation_id, state):

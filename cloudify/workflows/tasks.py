@@ -107,6 +107,18 @@ class WorkflowTask(object):
         # graph during retries
         self.execute_after = time.time()
 
+    @classmethod
+    def restore(cls, ctx, params):
+        task = cls(workflow_context=ctx, task_id=params['id'])
+        task._state = params['state']
+        task.info = params['info']
+        task.current_retries = params['current_retries']
+        return task
+
+    @property
+    def task_type(self):
+        return self.__class__.__name__
+
     def dump(self):
         return {
             'id': self.id,
@@ -114,7 +126,8 @@ class WorkflowTask(object):
             'info': self.info,
             'error': self.error,
             'current_retries': self.current_retries,
-            'cloudify_context': self.cloudify_context
+            'cloudify_context': self.cloudify_context,
+            'type': self.task_type
         }
 
     def is_remote(self):

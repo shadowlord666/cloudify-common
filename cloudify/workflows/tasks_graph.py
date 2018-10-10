@@ -31,8 +31,20 @@ class TaskDependencyGraph(object):
     """
 
     @classmethod
-    def restore(cls, client, graph):
-        return cls()
+    def restore(cls, workflow_context, client, graph):
+        graph = cls(workflow_context)
+        operations = client.operations.list(workflow_context.execution_id)
+        tasks = {}
+        for op_descr in operations:
+            op = OP_TYPES[op_descr.type].restore(workflow_context,
+                                                 op_descr.params)
+            graph.add_task(op)
+            tasks[op_descr.id] = op
+        for op_descr in operations:
+            op = tasks[op_descr.id]
+            for target in op_descr.dependencies:
+                graph.add_dependency(op, target)
+        return graph
 
     def __init__(self, workflow_context,
                  default_subgraph_task_config=None):
@@ -46,8 +58,11 @@ class TaskDependencyGraph(object):
         client.tasks_graphs.create(graph_id, name, ctx.execution_id)
         for task in self.tasks_iter():
             dependencies = list(self.graph.succ.get(task.id, {}).keys())
+            params = task.dump()
             client.operations.create(task.id, task.name, ctx.execution_id,
-                                     dependencies=dependencies)
+                                     type=task.task_type,
+                                     dependencies=dependencies,
+                                     parameters=params)
 
     def add_task(self, task):
         """Add a WorkflowTask to this graph
@@ -368,3 +383,11 @@ class SubgraphTask(tasks.WorkflowTask):
             new_task.containing_subgraph = self
         if not self.tasks and self.get_state() not in tasks.TERMINATED_STATES:
             self.set_state(tasks.TASK_SUCCEEDED)
+
+
+OP_TYPES = {
+    'RemoteWorkflowTask': tasks.RemoteWorkflowTask,
+    'LocalWorkflowTask': tasks.LocalWorkflowTask,
+    'NOPLocalWorkflowTask': tasks.NOPLocalWorkflowTask,
+    'SubgraphTask': SubgraphTask
+}
