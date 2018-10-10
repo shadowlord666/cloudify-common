@@ -36,10 +36,11 @@ class OperationsClient(object):
             [self._wrapper_cls(item) for item in response['items']],
             response['metadata'])
 
-    def create(self, operation_id, name, execution_id):
+    def create(self, operation_id, name, execution_id, dependencies):
         params = {
             'name': name,
-            'execution_id': execution_id
+            'execution_id': execution_id,
+            'dependencies': dependencies
         }
         uri = '/operations/{0}'.format(operation_id)
         response = self.api.put(uri, data=params, expected_status_code=201)

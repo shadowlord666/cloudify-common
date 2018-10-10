@@ -45,7 +45,9 @@ class TaskDependencyGraph(object):
         graph_id = uuid.uuid4().hex
         client.tasks_graphs.create(graph_id, name, ctx.execution_id)
         for task in self.tasks_iter():
-            client.operations.create(task.id, task.name, ctx.execution_id)
+            dependencies = list(self.graph.succ.get(task.id, {}).keys())
+            client.operations.create(task.id, task.name, ctx.execution_id,
+                                     dependencies=dependencies)
 
     def add_task(self, task):
         """Add a WorkflowTask to this graph
