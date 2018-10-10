@@ -327,8 +327,15 @@ class SubgraphTask(tasks.WorkflowTask):
 
     @classmethod
     def restore(cls, ctx, graph, params):
-        params['task_kwargs'] = {'graph': graph}
+        params['task_kwargs']['graph'] = graph
         task = super(SubgraphTask, cls).restore(ctx, graph, params)
+        return task
+
+    def dump(self):
+        task = super(SubgraphTask, self).dump()
+        task['task_kwargs'] = {
+            'name': self._name,
+        }
         return task
 
     def _duplicate(self):
