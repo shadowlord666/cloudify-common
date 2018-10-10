@@ -1206,7 +1206,7 @@ class _TaskDispatcher(object):
     def _get_client(self, task):
         tenant = task['tenant']
         handler = amqp_client.CallbackRequestResponseHandler(
-            exchange=task['target'])
+            exchange=task['target'], queue=task['id'])
         client = amqp_client.get_client(
             amqp_user=tenant['rabbitmq_username'],
             amqp_pass=tenant['rabbitmq_password'],
@@ -1240,12 +1240,12 @@ class _TaskDispatcher(object):
 
     def wait_for_result(self, workflow_task, task):
         client, handler = self._get_client(task)
+        callback = functools.partial(self._received, task['id'], client)
+        handler.wait_for_response(task['id'], callback)
         client.consume_in_thread()
         result = _AsyncResult(task)
-        callback = functools.partial(self._received, task['id'], client)
         self._logger.debug('Sending task [{0}] - {1}'.format(task['id'], task))
 
-        handler.wait_for_response(task['id'], callback)
         self._tasks.setdefault(client, {})[task['id']] = \
             (workflow_task, task, result)
         return result
