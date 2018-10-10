@@ -1187,7 +1187,7 @@ class _TaskDispatcher(object):
         self._tasks = {}
         self._logger = logging.getLogger('dispatch')
 
-    def make_subtask(self, tenant, task_id, target, queue, *args, **kwargs):
+    def make_subtask(self, tenant, target, task_id, queue, *args, **kwargs):
         return {
             'id': task_id,
             'tenant': tenant,
