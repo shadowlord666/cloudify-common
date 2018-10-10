@@ -1248,9 +1248,11 @@ class _TaskDispatcher(object):
         return result
 
     def _set_task_state(self, workflow_task, state, event):
-        workflow_task.set_state(state)
-        events.send_task_event(
-            state, workflow_task, events.send_task_event_func_remote, event)
+        with current_workflow_ctx.push(workflow_task.workflow_context):
+            workflow_task.set_state(state)
+            events.send_task_event(
+                state, workflow_task,
+                events.send_task_event_func_remote, event)
 
     def _received(self, task_id, client, response):
         self._logger.debug(
