@@ -524,7 +524,7 @@ class CallbackRequestResponseHandler(_RequestResponseHandlerBase):
         self._callbacks = {}
 
     def publish(self, message, *args, **kwargs):
-        callback = kwargs.pop('callback')
+        callback = kwargs.pop('callback', None)
         correlation_id = kwargs.pop('correlation_id', None)
         if correlation_id is None:
             correlation_id = uuid.uuid4().hex
