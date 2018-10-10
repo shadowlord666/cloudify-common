@@ -1195,6 +1195,14 @@ class _TaskDispatcher(object):
             'queue': queue,
             'args': args,
             'cloudify_task': kwargs,
+            'task': {
+                'id': task_id,
+                'tenant': tenant,
+                'target': target,
+                'queue': queue,
+                'args': args,
+                'cloudify_task': kwargs,
+            }
         }
         handler = amqp_client.CallbackRequestResponseHandler(
             exchange=task['target'], queue=task['id'])
@@ -1235,7 +1243,7 @@ class _TaskDispatcher(object):
                     'Timed out waiting for agent: {0}'
                     .format(task['target']))
         try:
-            handler.publish(task, routing_key='operation',
+            handler.publish(task['task'], routing_key='operation',
                             correlation_id=task['id'])
         except pika.exceptions.ChannelClosed:
             raise exceptions.RecoverableError(
