@@ -599,7 +599,7 @@ class LocalWorkflowTask(WorkflowTask):
 
     @classmethod
     def restore(cls, ctx, graph, params):
-        task = super(LocalWorkflowTask, cls).restore(ctx, params)
+        task = super(LocalWorkflowTask, cls).restore(ctx, graph, params)
         task.local_task = lambda *a, **kw: None
         return task
 
