@@ -155,6 +155,7 @@ class WorkflowTask(object):
                          TASK_RESCHEDULED, TASK_SUCCEEDED, TASK_FAILED]:
             raise RuntimeError('Illegal state set on task: {0} '
                                '[task={1}]'.format(state, str(self)))
+        self.workflow_context.update_operation(self.id, state=state)
         if self._state in TERMINATED_STATES:
             return
         self._state = state
