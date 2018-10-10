@@ -1240,6 +1240,7 @@ class _TaskDispatcher(object):
 
     def wait_for_result(self, workflow_task, task):
         client, handler = self._get_client(task)
+        client.consume_in_thread()
         result = _AsyncResult(task)
         callback = functools.partial(self._received, task['id'], client)
         self._logger.debug('Sending task [{0}] - {1}'.format(task['id'], task))
