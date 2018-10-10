@@ -108,7 +108,7 @@ class WorkflowTask(object):
         self.execute_after = time.time()
 
     @classmethod
-    def restore(cls, ctx, params):
+    def restore(cls, ctx, graph, params):
         task = cls(workflow_context=ctx, task_id=params['id'],
                    info=params['info'], **params.get('task_kwargs', {}))
         task._state = params['state']
@@ -598,7 +598,7 @@ class LocalWorkflowTask(WorkflowTask):
         return super_dump
 
     @classmethod
-    def restore(cls, ctx, params):
+    def restore(cls, ctx, graph, params):
         task = super(LocalWorkflowTask, cls).restore(ctx, params)
         task.local_task = lambda *a, **kw: None
         return task
