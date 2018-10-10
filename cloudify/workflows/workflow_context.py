@@ -1187,9 +1187,9 @@ class _TaskDispatcher(object):
         self._tasks = {}
         self._logger = logging.getLogger('dispatch')
 
-    def make_subtask(self, tenant, target, queue, *args, **kwargs):
+    def make_subtask(self, tenant, task_id, target, queue, *args, **kwargs):
         return {
-            'id': uuid.uuid4().hex,
+            'id': task_id,
             'tenant': tenant,
             'target': target,
             'queue': queue,
@@ -1218,33 +1218,35 @@ class _TaskDispatcher(object):
     def send_task(self, workflow_task, task):
         client, handler = self._get_client(task)
 
-        result = _AsyncResult(task)
         ping_handler = amqp_client.BlockingRequestResponseHandler(
             exchange=task['target'])
         client.add_handler(ping_handler)
-        client.consume_in_thread()
-
-        if task['queue'] != MGMTWORKER_QUEUE:
-            response = _send_ping_task(task['target'], ping_handler)
-            if 'time' not in response:
+        with client:
+            if task['queue'] != MGMTWORKER_QUEUE:
+                response = _send_ping_task(task['target'], ping_handler)
+                if 'time' not in response:
+                    raise exceptions.RecoverableError(
+                        'Timed out waiting for agent: {0}'
+                        .format(task['target']))
+            try:
+                handler.publish(task, routing_key='operation',
+                                correlation_id=task['id'])
+            except pika.exceptions.ChannelClosed:
                 raise exceptions.RecoverableError(
-                    'Timed out waiting for agent: {0}'.format(task['target']))
+                    'Could not send to agent {0} - channel does not exist yet'
+                    .format(task['target']))
+            self._logger.debug('Task [{0}] sent'.format(task['id']))
+            self._set_task_state(workflow_task, TASK_STARTED, {})
 
+    def wait_for_result(self, workflow_task, task):
+        client, handler = self._get_client(task)
+        result = _AsyncResult(task)
         callback = functools.partial(self._received, task['id'], client)
         self._logger.debug('Sending task [{0}] - {1}'.format(task['id'], task))
-        try:
-            handler.publish(task, callback=callback, routing_key='operation',
-                            correlation_id=task['id'])
-        except pika.exceptions.ChannelClosed:
-            raise exceptions.RecoverableError(
-                'Could not send to agent {0} - channel does not exist yet'
-                .format(task['target']))
-        self._logger.debug('Task [{0}] sent'.format(task['id']))
 
+        handler.wait_for_response(task['id'], callback)
         self._tasks.setdefault(client, {})[task['id']] = \
             (workflow_task, task, result)
-        self._set_task_state(workflow_task, TASK_STARTED, {})
-
         return result
 
     def _set_task_state(self, workflow_task, state, event):
@@ -1334,10 +1336,14 @@ class RemoteContextHandler(CloudifyWorkflowContextHandler):
 
         # Remote task
         return self._dispatcher.make_subtask(
-            tenant, target, kwargs=workflow_task.kwargs, queue=queue)
+            tenant, target, task_id=workflow_task.id,
+            kwargs=workflow_task.kwargs, queue=queue)
 
     def send_task(self, workflow_task, task):
         return self._dispatcher.send_task(workflow_task, task)
+
+    def wait_for_result(self, workflow_task, task):
+        return self._dispatcher.wait_for_result(workflow_task, task)
 
     @property
     def operation_cloudify_context(self):
